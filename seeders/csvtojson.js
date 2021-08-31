@@ -2,76 +2,117 @@ const fs = require("fs");
 const csvtojson = require("csvtojson");
 const csv = require("fast-csv");
 const path = require("path");
-const { post } = require("../services/victim.service");
+const { post } = require("../services/case.service");
 
 const files = {
-	2019: "../../data/2019.csv",
-	// 2020: "../../data/2020.csv",
-	// 2021: "../../data/2021.csv",
+	2019: "../data/2019.csv",
+	2020: "../data/2020.csv",
+	2021: "../data/2021.csv",
 };
 
-for (const file in files) {
-	try {
+populateData()
+	.then((res) => {
+		console.log(res);
+		// process.exit();
+	})
+	.catch((err) => console.error(err));
+
+async function populateData() {
+	for (const file in files) {
 		const filepath = path.resolve(__dirname, files[file]);
-		generateData(filepath);
-	} catch (error) {
-		console.log(error);
+		await generateData(filepath).catch((err) => Promise.reject(err));
 	}
+	return Promise.resolve(true);
 }
 
-function generateData(filepath) {
+async function generateData(filepath) {
 	let stream = fs.createReadStream(filepath);
-	let csvData = [];
 	let csvStream = csv
 		.parse({
 			skipRows: 1, // skip header row
-			// maxRows:1
+			// maxRows: 1,
 		})
 		.on("data", async function (data) {
 			let entry = {
-				county: data[0],
-				victim: data[1],
-				gender: data[2],
-				age: data[3],
-				occupation: data[4],
-				date_reported: data[5],
-				perpetrator: data[6],
-				suicide_attempt: data[7],
-				perpetrator_age: data[8],
-				perpetrator_gender: data[9],
-				weapon_used: data[10],
-				nature_of_death: data[11],
-				case: data[12],
-				summary: data[13],
-				source: data[14],
-				history_of_violence: data[15],
+				victim: {
+					name: data[1],
+					gender: data[2],
+					age: await age(data[3]),
+					occupation: data[4],
+				},
+				perpetrator: {
+					name: data[6],
+					suicide_attempt: await suicide_attempt(data[7]),
+					age: await age(data[8]),
+					gender: data[9],
+					history_of_violence: await history_of_violence(data[15]),
+				},
+				death: {
+					weapon_used: data[10],
+					nature_of_death: data[11],
+				},
+				location: {
+					county: data[0],
+				},
+				source: {
+					date_reported: data[5],
+					summary: data[13],
+					website: data[14],
+				},
+				status: data[12],
 			};
 
-			let victim = await generateSchemaData(entry);
-			if (victim instanceof Error) console.error(`Error: ${victim}`);
-			console.log(victim);
-			csvData.push(victim);
+			await generateSchemaData(entry)
+				.then((res) => console.log(res))
+				.catch((err) => console.log(err));
 		})
 		.on("error", function (error) {
 			console.error(error);
 		})
-		.on("end", function () {
-			// console.log(csvData);
-		});
+		.on("end", function () {});
+
 	stream.pipe(csvStream);
 }
 
-async function generateSchemaData(jsonData) {
-	const victim = {
-		name: jsonData.victim,
-		age: !isNaN(jsonData.age) ? jsonData.age : 0,
-		gender: jsonData.gender,
-		occupation: jsonData.occupation,
-	};
-
-	const entry = await post(victim)
+async function generateSchemaData(csvData) {
+	return await post(csvData)
 		.then((res) => res)
 		.catch((err) => err);
-	return entry;
-	// TODO: create functions to sort data into their appropriate schemas
+}
+
+async function history_of_violence(value) {
+	if (
+		value === null ||
+		value === undefined ||
+		value === "" ||
+		value.toLowerCase() === "not reported"
+	) {
+		return false;
+	}
+	return true;
+}
+
+async function suicide_attempt(value) {
+	if (
+		value === null ||
+		value === undefined ||
+		value === "" ||
+		value.toLowerCase() === "no"
+	) {
+		return false;
+	}
+	return true;
+}
+
+async function age(value) {
+	if (
+		value === null ||
+		value === undefined ||
+		value === "" ||
+		value.toLowerCase() === "not reported" ||
+		value.toLowerCase() === "unknown"
+	) {
+		return 0;
+	}
+	return parseInt(value);
 }
