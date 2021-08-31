@@ -14,6 +14,4 @@ const sourceSchema = mongoose.Schema({
 	},
 });
 
-const Source = mongoose.model("source", sourceSchema);
-
-module.exports = Source;
+module.exports = { sourceSchema };

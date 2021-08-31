@@ -5,6 +5,4 @@ const locationSchema = mongoose.Schema({
 	subcounty: { type: String },
 });
 
-const Location = mongoose.model("location", locationSchema);
-
-module.exports = Location;
+module.exports = { locationSchema };

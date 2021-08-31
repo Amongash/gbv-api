@@ -24,6 +24,4 @@ const victimSchema = mongoose.Schema(
 	{ timestamps: true }
 );
 
-const Victim = mongoose.model("victim", victimSchema);
-
-module.exports = Victim;
+module.exports = { victimSchema };

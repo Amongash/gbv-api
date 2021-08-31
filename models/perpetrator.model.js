@@ -23,13 +23,8 @@ const perpetratorSchema = mongoose.Schema(
 		history_of_violence: {
 			type: Boolean,
 		},
-		case: {
-			type: mongoose.Types.ObjectId,
-		},
 	},
 	{ timestamps: true }
 );
 
-const Perpetrator = mongoose.model("perpetrator", perpetratorSchema);
-
-module.exports = Perpetrator;
+module.exports = { perpetratorSchema };

@@ -1,9 +1,8 @@
 const mongoose = require("../lib/mongoose");
-const { Victim, Perpetrator } = require("../models");
+const { Case } = require("../models");
 
 module.exports = {
-	Victim,
-	Perpetrator,
+	Case,
 	isValidId,
 };
 
